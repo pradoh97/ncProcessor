@@ -5,13 +5,15 @@ import netCDF4
 import pathlib
 
 def getData(lines):
+
+    #Posiciones de este array = 1: Time, 2: Latitude, 3: Longitude, 4: Salinity, 5: Temp_ext y 6: Platform.
     data = [[], [], [], [], [], []]   
     
     guardarDatos = False
     dataSet = 0
     for line in lines:
         
-        #Empieza un conjunto de datos
+        #Empieza un grupo de datos
         if 'platform' in line:
             dataSet = 5
             guardarDatos = True
@@ -65,6 +67,7 @@ input('Apretá enter para que el programa empiece a trabajar, o cerra para huir.
 
 resultsDir = 'reduced/csv/'
 
+#Crea la carpeta a donde se arrojan los archivos resultantes.
 try:
     os.mkdir(resultsDir)
 except OSError as error:
@@ -72,23 +75,30 @@ except OSError as error:
 
 processed = 0
 
+#Encabezados del CSV (pensado en que va a ser pasado a una planilla de cálculo)
 headers = 'Time, Latitude, Longitude, Salinity, Temp_ext, Platform'
 
+#Itera sobre cada archivo que haya sido reducido.
 for file in os.listdir("reduced/"):
     startLine = 0
     endLine = 0
+    
+    #La plataforma es la misma para toda una medición. Si existe, siempre va a ser la misma para todo el archivo.
     platform = ""
     
+    #Se toman solo los archivos con extensión txt.
     if file.endswith(".txt"):
         resultFile = resultsDir + '/' + file
         print('\nConvirtiendo en CSV a: ', file)
         
+        #El archivo abierto no es modificado.
         with open("reduced/" + file) as old, open(resultsDir + file, 'w') as new:
             
             lineNumber = 0
             
             lines = old.readlines()
             
+            #Obtiene la primera y última linea con datos.
             for line in lines:
                 lineNumber += 1
                 if 'data:' in line:
@@ -100,6 +110,7 @@ for file in os.listdir("reduced/"):
             
             new.write(headers)
             
+            #Si se encontró un nombre de plataforma, se quita del array de grupos de datos.
             if(dataSet[5]):
                 platform = dataSet.pop(5).pop(0)
             
@@ -109,10 +120,10 @@ for file in os.listdir("reduced/"):
             for data in range(length):
                 
                 new.write('\n')
+                
                 #Recorre el grupo de datos correspondiente y escribe el dato en el txt.
                 for dataGroup in range(len(dataSet)):
                     if len(dataSet[dataGroup]) > 0:
-                        
                         newData = (str(dataSet[dataGroup].pop(0)))
                         new.write(newData)
                     else:
