@@ -4,44 +4,40 @@ import os
 import netCDF4
 import pathlib
 
-headers = 'Time, Latitude, Longitude, Salinity, Temp_ext, Platform'
-resultsDir = 'reduced/csv/'
-originalFilesDir = 'reduced/'
-
 def getData(lines):
     data = [[], [], [], [], [], []]   
     
-    storeData = False
+    guardarDatos = False
     dataSet = 0
     for line in lines:
         
         #Empieza un conjunto de datos
         if 'platform' in line:
             dataSet = 5
-            storeData = True
+            guardarDatos = True
             continue
         if 'time' in line:
             dataSet = 0
-            storeData = True
+            guardarDatos = True
             continue
         if 'lat' in line:
             dataSet = 1
-            storeData = True
+            guardarDatos = True
             continue
         if 'lon' in line:
             dataSet = 2
-            storeData = True
+            guardarDatos = True
             continue
         if 'sea_surface_salinity' in line:
             dataSet = 3
-            storeData = True
+            guardarDatos = True
             continue
         if 'sea_surface_temperature' in line:
             dataSet = 4
-            storeData = True
+            guardarDatos = True
             continue
         
-        if storeData:
+        if guardarDatos:
             #Extrae la plataforma
             if dataSet == 5:
                 data[dataSet].append(str(line).replace('"','')[:-2].strip())
@@ -56,7 +52,7 @@ def getData(lines):
         
         #El conjunto de datos terminó
         if ';' in line:
-            storeData=False
+            guardarDatos=False
     
     return data    
 
@@ -67,6 +63,8 @@ print('\nPara usar este programa, tenés que haber ejecutado antes el nc_to_txt.
 print('----------------------------------------------------------------\n')
 input('Apretá enter para que el programa empiece a trabajar, o cerra para huir...')
 
+resultsDir = 'reduced/csv/'
+
 try:
     os.mkdir(resultsDir)
 except OSError as error:
@@ -74,15 +72,18 @@ except OSError as error:
 
 processed = 0
 
-for file in os.listdir(originalFilesDir):
+headers = 'Time, Latitude, Longitude, Salinity, Temp_ext, Platform'
+
+for file in os.listdir("reduced/"):
     startLine = 0
     endLine = 0
+    platform = ""
     
     if file.endswith(".txt"):
         resultFile = resultsDir + '/' + file
         print('\nConvirtiendo en CSV a: ', file)
         
-        with open(originalFilesDir + file) as old, open(resultsDir + file, 'w') as new:
+        with open("reduced/" + file) as old, open(resultsDir + file, 'w') as new:
             
             lineNumber = 0
             
@@ -98,8 +99,10 @@ for file in os.listdir(originalFilesDir):
             dataSet = getData(lines[startLine:endLine - 1])
             
             new.write(headers)
-
-            platform = dataSet.pop(5).pop(0)
+            
+            if(dataSet[5]):
+                platform = dataSet.pop(5).pop(0)
+            
             length = len(dataSet[0])
             
             #Itera según la cantidad máxima de datos (data) que haya en un grupo.
